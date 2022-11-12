@@ -1,0 +1,269 @@
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage{fancyvrb}
+
+\newcommand{\passthrough}[1]{\lstset{mathescape=false}#1\lstset{mathescape=true}}
+\newcommand{\tightlist}{}
+
+\title{Unit Testing Your Web Application}
+\author{Moshe Zadka -- https://cobordism.com}
+\date{}
+
+\begin{document}
+\begin{titlepage}
+\maketitle
+\end{titlepage}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Acknowledgement of Country}
+
+Belmont (in San Francisco Bay Area Peninsula)
+
+Ancestral homeland of the Ramaytush Ohlone people
+
+\end{frame}
+
+I live in Belmont, in the San Francisco Bay Area Peninsula. I wish to
+acknowledge it as the ancestral homeland of the Ramaytush Ohlone people.
+
+\hypertarget{pyramid-example}{%
+\subsection{Pyramid Example}\label{pyramid-example}}
+
+\hypertarget{static-view}{%
+\subsubsection{Static view}\label{static-view}}
+
+\begin{frame}[fragile]
+\frametitle{Static Value}
+
+\begin{lstlisting}[language=Python]
+def empty(request):
+    return pyramid.response.Response(
+        json.dumps({}).encode("ascii"),
+        content_type="application/json",
+    )
+with pyramid.config.Configurator() as config:
+    config.add_route("root", "/")
+    config.add_view(empty, route_name="root")
+    app = config.make_wsgi_app()
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Static View Retrieval}
+
+\begin{lstlisting}[language=Python]
+request = client.get("/")
+request.json()
+\end{lstlisting}
+
+\begin{lstlisting}
+{}
+\end{lstlisting}
+
+\end{frame}
+
+\hypertarget{json-renderer}{%
+\subsubsection{JSON Renderer}\label{json-renderer}}
+
+\begin{frame}[fragile]
+\frametitle{JSON View}
+
+\begin{lstlisting}[language=Python]
+def json(request):
+    return {}
+with pyramid.config.Configurator() as config:
+    config.add_route("root", "/")
+    config.add_view(empty, route_name="root")
+    config.add_route("json", "/json")
+    config.add_view(json, route_name="json", renderer="json")
+    app = config.make_wsgi_app()
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{JSON View Retrieval}
+
+\begin{lstlisting}[language=Python]
+request = client.get("/json")
+request.json()
+\end{lstlisting}
+
+\begin{lstlisting}
+{}
+\end{lstlisting}
+
+\end{frame}
+
+\hypertarget{using-parameters}{%
+\subsubsection{Using Parameters}\label{using-parameters}}
+
+\begin{frame}[fragile]
+\frametitle{Parameter View}
+
+\begin{lstlisting}[language=Python]
+def params(request):
+    return dict(thing=request.params["thing"])
+with pyramid.config.Configurator() as config:
+    config.add_route("root", "/")
+    config.add_view(empty, route_name="root")
+    config.add_route("json", "/json")
+    config.add_view(json, route_name="json", renderer="json")
+    config.add_route("params", "/params")
+    config.add_view(params, route_name="params", renderer="json")
+    app = config.make_wsgi_app()
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parameter View Retrieval}
+
+\begin{lstlisting}[language=Python]
+request = client.get("/params?thing=hello")
+request.json()
+\end{lstlisting}
+
+\begin{lstlisting}
+{'thing': 'hello'}
+\end{lstlisting}
+
+\end{frame}
+
+\hypertarget{using-route-matches}{%
+\subsubsection{Using Route Matches}\label{using-route-matches}}
+
+\begin{frame}[fragile]
+\frametitle{Parameter View}
+
+\begin{lstlisting}[language=Python]
+def matches(request):
+    return dict(name=request.matchdict["name"])
+with pyramid.config.Configurator() as config:
+    config.add_route("root", "/")
+    config.add_view(empty, route_name="root")
+    config.add_route("json", "/json")
+    config.add_view(json, route_name="json", renderer="json")
+    config.add_route("params", "/params")
+    config.add_view(params, route_name="params", renderer="json")
+    config.add_route("matches", "/matches/{name}")
+    config.add_view(matches, route_name="matches", renderer="json")
+    app = config.make_wsgi_app()
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Parameter View Retrieval}
+
+\begin{lstlisting}[language=Python]
+request = client.get("/matches/hello")
+request.json()
+\end{lstlisting}
+
+\begin{lstlisting}
+{'name': 'hello'}
+\end{lstlisting}
+
+\end{frame}
+
+\hypertarget{using-request-body}{%
+\subsubsection{Using Request Body}\label{using-request-body}}
+
+\begin{frame}[fragile]
+\frametitle{Body View}
+
+\begin{lstlisting}[language=Python]
+def body(request):
+    return dict(field=request.json_body["field"])
+with pyramid.config.Configurator() as config:
+    config.add_route("root", "/")
+    config.add_view(empty, route_name="root")
+    config.add_route("json", "/json")
+    config.add_view(json, route_name="json", renderer="json")
+    config.add_route("params", "/params")
+    config.add_view(params, route_name="params", renderer="json")
+    config.add_route("matches", "/matches/{name}")
+    config.add_view(matches, route_name="matches", renderer="json")
+    config.add_route("body", "/body")
+    config.add_view(body, route_name="body", renderer="json")
+    app = config.make_wsgi_app()
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Body View Retrieval}
+
+\begin{lstlisting}[language=Python]
+request = client.post("/body", json=dict(field="hello"))
+request.json()
+\end{lstlisting}
+
+\begin{lstlisting}
+{'field': 'hello'}
+\end{lstlisting}
+
+\end{frame}
+
+\hypertarget{pyramid-concepts}{%
+\subsection{Pyramid Concepts}\label{pyramid-concepts}}
+
+\hypertarget{view}{%
+\subsubsection{View}\label{view}}
+
+\hypertarget{route}{%
+\subsubsection{Route}\label{route}}
+
+\hypertarget{configurator}{%
+\subsubsection{Configurator}\label{configurator}}
+
+\hypertarget{registry}{%
+\subsubsection{Registry}\label{registry}}
+
+\hypertarget{scanning}{%
+\subsubsection{Scanning}\label{scanning}}
+
+\hypertarget{python-web-concepts}{%
+\subsection{Python Web Concepts}\label{python-web-concepts}}
+
+\hypertarget{wsgi}{%
+\subsubsection{WSGI}\label{wsgi}}
+
+\hypertarget{httpx}{%
+\subsubsection{\texorpdfstring{\texttt{httpx}}{httpx}}\label{httpx}}
+
+\hypertarget{unit-testing}{%
+\subsection{Unit Testing}\label{unit-testing}}
+
+\hypertarget{mocking-functions}{%
+\subsubsection{Mocking Functions}\label{mocking-functions}}
+
+\hypertarget{mocking-request}{%
+\subsubsection{Mocking Request}\label{mocking-request}}
+
+\hypertarget{calling-wsgi}{%
+\subsubsection{Calling WSGI}\label{calling-wsgi}}
+
+\hypertarget{using-httpx}{%
+\subsubsection{\texorpdfstring{Using
+\texttt{httpx}}{Using httpx}}\label{using-httpx}}
+
+\hypertarget{summary}{%
+\subsection{Summary}\label{summary}}
+
+\hypertarget{pyramid-concepts-1}{%
+\subsubsection{Pyramid: Concepts}\label{pyramid-concepts-1}}
+
+\hypertarget{unit-testing-why}{%
+\subsubsection{Unit Testing: Why?}\label{unit-testing-why}}
+
+\hypertarget{unit-testing-how}{%
+\subsubsection{Unit Testing: How?}\label{unit-testing-how}}
+
+\end{document}
